@@ -1,4 +1,5 @@
 out
 cache
+bin
 
 script/Counter.s.sol

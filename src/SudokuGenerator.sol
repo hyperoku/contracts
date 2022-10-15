@@ -5,6 +5,8 @@ import "./ISudokuGenerator.sol";
 import "forge-std/console.sol";
 import "openzeppelin-contracts/utils/Strings.sol";
 
+error ValueOutOfBounds();
+
 contract SudokuGenerator is ISudokuGenerator {
     // random0 function values: https://en.wikipedia.org/wiki/Linear_congruential_generator
     uint16 constant a = 8121;
@@ -112,7 +114,7 @@ contract SudokuGenerator is ISudokuGenerator {
             difficulty < MIN_DIFFICULTY_VALUE ||
             difficulty > MAX_DIFFICULTY_VALUE
         ) {
-            revert("The difficulty value is not valid");
+            revert ValueOutOfBounds();
         }
         unchecked {
             uint8[9][9] memory grid;
@@ -133,6 +135,7 @@ contract SudokuGenerator is ISudokuGenerator {
             ];
             uint8 random_index;
             for (uint8 i = 0; i < 3; ++i) {
+                // randomize boxes[i]
                 for (uint8 j = 0; j < 9; ++j) {
                     (current_random_number, random_index) = generateRandomValue(
                         current_random_number,
@@ -144,14 +147,13 @@ contract SudokuGenerator is ISudokuGenerator {
                         boxes[i][j]
                     );
                 }
+                // fill the 3x3 box
                 for (uint8 j = 0; j < 3; ++j) {
                     for (uint8 k = 0; k < 3; ++k) {
                         grid[i * 3 + j][i * 3 + k] = boxes[i][j * 3 + k];
                     }
                 }
             }
-            delete boxes;
-            delete random_index;
 
             // generate full sudoku grid
             fillRemaining(grid, 0, 3);
@@ -169,7 +171,6 @@ contract SudokuGenerator is ISudokuGenerator {
             solution = keccak256(abi.encodePacked(sol_string));
 
             // remove n=difficulty values
-            uint8 removed = 0;
             uint8 size = 81;
             uint8 position;
             uint8[81] memory positions = [
@@ -192,10 +193,6 @@ contract SudokuGenerator is ISudokuGenerator {
                 positions[position] = positions[size - 1];
                 size--;
             }
-            delete removed;
-            delete size;
-            delete position;
-            delete positions;
 
             // transform grid to string
             sudoku = "";
@@ -208,5 +205,14 @@ contract SudokuGenerator is ISudokuGenerator {
                 }
             }
         }
+    }
+
+    function getDifficultyRange()
+        external
+        override
+        pure
+        returns (uint8 min, uint8 max)
+    {
+        return (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE);
     }
 }

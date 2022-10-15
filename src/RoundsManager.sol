@@ -5,8 +5,11 @@ import "openzeppelin-contracts/access/Ownable.sol";
 import "./ISudokuGenerator.sol";
 import "forge-std/console.sol";
 
-error InvalidDifficulty();
 error RoundEndsSoon();
+error DifficultyNameDoesNotExist();
+error DifficultyValueOutOfBounds();
+error DifficultyNameAlreadyExists();
+error DifficultyValueAlreadyExists();
 
 contract RoundsManager is Ownable {
 
@@ -40,14 +43,18 @@ contract RoundsManager is Ownable {
     uint32 public round_duration_in_blocks = 4320; // in Mumbai testnet, 1 block ~= 5 seconds -> 4320*5=21600s=6h
     uint8 public min_game_duration_in_blocks = 12; // 12*5=60s=1min
 
+    uint8 public immutable MIN_DIFFICULTY_VALUE;
+    uint8 public immutable MAX_DIFFICULTY_VALUE;
+
     modifier difficultyExists(string calldata _difficulty) {
         if (difficulty_values[_difficulty] == 0) 
-            revert InvalidDifficulty();
+            revert DifficultyNameDoesNotExist();
         _;
     }
 
     constructor(address _sudokuGenerator) {
         sudokuGenerator = ISudokuGenerator(_sudokuGenerator);
+        (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = sudokuGenerator.getDifficultyRange();
         difficulty_values["EASY"] = 37;
         difficulty_values["MEDIUM"] = 48;
         difficulty_values["HARD"] = 53;
@@ -60,24 +67,25 @@ contract RoundsManager is Ownable {
     {
         unchecked {
             uint64[] memory round_games;
+            round_id = total_rounds;
+            total_rounds++;
             Round memory round = Round(
-                total_rounds,
+                round_id,
                 _difficulty,
                 round_games,
                 block.number,
                 block.number + round_duration_in_blocks
             );
-            rounds[total_rounds] = round;
-            last_active_round_ids[_difficulty] = total_rounds;
-            total_rounds++;
-            return round.id;
+            rounds[round_id] = round;
+            last_active_round_ids[_difficulty] = round_id;
+            return round_id;
         }
     }
 
     function createGame(string calldata _difficulty)
         public
         difficultyExists(_difficulty)
-        returns (string memory sudoku)
+        returns (uint64 game_id)
     {
         unchecked {
             uint32 round_id = last_active_round_ids[_difficulty];
@@ -96,11 +104,13 @@ contract RoundsManager is Ownable {
                 )   
                     revert RoundEndsSoon();
             }
-            uint64 game_id = total_games;
+            string memory sudoku;
             bytes32 solution;
             (sudoku, solution) = sudokuGenerator.generateSudoku(
                 difficulty_values[_difficulty]
             );
+            game_id = total_games;
+            total_games++;
             Game memory game = Game(
                 game_id,
                 round_id,
@@ -112,23 +122,26 @@ contract RoundsManager is Ownable {
             );
             games[game_id] = game;
             rounds[round_id].game_ids.push(game_id);
-            total_games++;
-            return sudoku;
+            return game_id;
         }
     }
 
-    // function addNewDifficulty(string calldata name, uint8 value)
-    //     public
-    //     onlyOwner
-    // {
-    //     if (value < sudokuGenerator.MIN_DIFFICULTY_VALUE || value > sudokuGenerator.MAX_DIFFICULTY_VALUE) {
-    //         revert InvalidDifficulty();
-    //     }
-    //     if (difficulty_values[name] != 0)
-    //         revert InvalidDifficulty();
-    //     difficulty_names.push(name);
-    //     difficulty_values[name] = value;
-    // }
+    function addNewDifficulty(string calldata name, uint8 value)
+        public
+        onlyOwner
+    {
+        if (value < MIN_DIFFICULTY_VALUE || value > MAX_DIFFICULTY_VALUE) {
+            revert DifficultyValueOutOfBounds();
+        }
+        if (difficulty_values[name] != 0)
+            revert DifficultyNameAlreadyExists();
+        for (uint8 i = 0; i < difficulty_names.length; i++) {
+            if (difficulty_values[difficulty_names[i]] == value)
+                revert DifficultyValueAlreadyExists();
+        }
+        difficulty_names.push(name);
+        difficulty_values[name] = value;
+    }
 
     function stringsEqual(string memory a, string memory b) 
         internal 
