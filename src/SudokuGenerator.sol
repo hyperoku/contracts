@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "./ISudokuGenerator.sol";
 import "forge-std/console.sol";
 import "openzeppelin-contracts/utils/Strings.sol";
 
 error ValueOutOfBounds();
 
-contract SudokuGenerator is ISudokuGenerator {
+contract SudokuGenerator {
     // random0 function values: https://en.wikipedia.org/wiki/Linear_congruential_generator
     uint16 constant a = 8121;
     uint16 constant c = 28411;
@@ -107,7 +106,6 @@ contract SudokuGenerator is ISudokuGenerator {
 
     function generateSudoku(uint64 seed, uint8 difficulty)
         external
-        override
         returns (string memory sudoku, bytes32 solution)
     {
         if (
@@ -209,7 +207,6 @@ contract SudokuGenerator is ISudokuGenerator {
 
     function getDifficultyRange()
         external
-        override
         pure
         returns (uint8 min, uint8 max)
     {

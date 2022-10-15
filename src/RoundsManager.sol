@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "openzeppelin-contracts/access/Ownable.sol";
-import "./ISudokuGenerator.sol";
+import "./IRandomSudokuGenerator.sol";
+import 'chainlink/contracts/src/v0.8/ConfirmedOwner.sol';
 import "forge-std/console.sol";
 
 error RoundEndsSoon();
@@ -11,15 +11,14 @@ error DifficultyValueOutOfBounds();
 error DifficultyNameAlreadyExists();
 error DifficultyValueAlreadyExists();
 
-contract RoundsManager is Ownable {
-    ISudokuGenerator public immutable sudokuGenerator;
+contract RoundsManager is ConfirmedOwner {
+    IRandomSudokuGenerator public immutable sudokuGenerator;
 
     struct Game {
+        uint256 request_id;
         uint64 id;
         uint32 round_id;
         address player;
-        string sudoku;
-        bytes32 solution;
         uint256 start_blockNumber;
         uint256 end_blockNumber;
     }
@@ -54,8 +53,8 @@ contract RoundsManager is Ownable {
     event roundCreated(uint32 round_id);
     event gameCreated(uint64 game_id);
 
-    constructor(address _sudokuGenerator) {
-        sudokuGenerator = ISudokuGenerator(_sudokuGenerator);
+    constructor(address _sudokuGenerator) ConfirmedOwner(msg.sender) {
+        sudokuGenerator = IRandomSudokuGenerator(_sudokuGenerator);
         (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = sudokuGenerator.getDifficultyRange();
         difficulty_values["EASY"] = 37;
         difficulty_values["MEDIUM"] = 48;
@@ -105,19 +104,16 @@ contract RoundsManager is Ownable {
                     block.number + min_game_duration_in_blocks
                 ) revert RoundEndsSoon();
             }
-            string memory sudoku;
-            bytes32 solution;
-            (sudoku, solution) = sudokuGenerator.generateSudoku(
+            uint256 request_id = sudokuGenerator.requestRandomSudoku(
                 difficulty_values[_difficulty]
             );
             game_id = total_games;
             total_games++;
             Game memory game = Game(
+                request_id,
                 game_id,
                 round_id,
                 msg.sender,
-                sudoku,
-                solution,
                 block.number,
                 0
             );
