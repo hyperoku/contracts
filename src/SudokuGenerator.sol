@@ -105,7 +105,7 @@ contract SudokuGenerator is ISudokuGenerator {
         }
     }
 
-    function generateSudoku(uint8 difficulty)
+    function generateSudoku(uint64 seed, uint8 difficulty)
         external
         override
         returns (string memory sudoku, bytes32 solution)
@@ -118,7 +118,7 @@ contract SudokuGenerator is ISudokuGenerator {
         }
         unchecked {
             uint8[9][9] memory grid;
-            uint64 current_random_number = 1231238418237;
+            uint64 current_random_number = seed;
 
             // reset grid
             for (uint8 i = 0; i < 9; ++i) {
