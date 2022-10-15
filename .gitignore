@@ -1,6 +1,4 @@
 out
 cache
 
-src/Counter.sol
-test/Counter.t.sol
 script/Counter.s.sol

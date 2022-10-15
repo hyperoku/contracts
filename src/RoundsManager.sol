@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "openzeppelin-contracts/access/Ownable.sol";
 import "./ISudokuGenerator.sol";
+import "forge-std/console.sol";
 
 error InvalidDifficulty();
 error RoundEndsSoon();
-error AnotherRoundAlreadyActive();
 
 contract RoundsManager is Ownable {
 
-    ISudokuGenerator public constant sudokuGenerator = ISudokuGenerator(0x5FbDB2315678afecb367f032d93F642f64180aa3);
+    ISudokuGenerator public immutable sudokuGenerator;
 
     struct Game {
         uint64 id;
@@ -32,7 +32,7 @@ contract RoundsManager is Ownable {
 
     mapping(uint32 => Round) public rounds;
     mapping(uint64 => Game) public games;
-    mapping(string => uint8) difficulty_values;
+    mapping(string => uint8) public difficulty_values;
     mapping(string => uint32) public last_active_round_ids; // DIFFICULTY -> ROUND ID
     string[] public difficulty_names = ["EASY", "MEDIUM", "HARD"];
     uint32 public total_rounds;
@@ -40,16 +40,14 @@ contract RoundsManager is Ownable {
     uint32 public round_duration_in_blocks = 4320; // in Mumbai testnet, 1 block ~= 5 seconds -> 4320*5=21600s=6h
     uint8 public min_game_duration_in_blocks = 12; // 12*5=60s=1min
 
-    uint8 public constant MIN_DIFFICULTY_VALUE = 16;
-    uint8 public constant MAX_DIFFICULTY_VALUE = 64;
-
     modifier difficultyExists(string calldata _difficulty) {
         if (difficulty_values[_difficulty] == 0) 
             revert InvalidDifficulty();
         _;
     }
 
-    constructor() {
+    constructor(address _sudokuGenerator) {
+        sudokuGenerator = ISudokuGenerator(_sudokuGenerator);
         difficulty_values["EASY"] = 37;
         difficulty_values["MEDIUM"] = 48;
         difficulty_values["HARD"] = 53;
@@ -60,20 +58,20 @@ contract RoundsManager is Ownable {
         difficultyExists(_difficulty)
         returns (uint32 round_id)
     {
-        if (rounds[last_active_round_ids[_difficulty]].end_blockNumber >= block.number)
-            revert AnotherRoundAlreadyActive();
-        uint64[] memory round_games;
-        Round memory round = Round(
-            total_rounds,
-            _difficulty,
-            round_games,
-            block.number,
-            block.number + round_duration_in_blocks
-        );
-        total_rounds++;
-        rounds[round.id] = round;
-        last_active_round_ids[_difficulty] = total_rounds;
-        return round.id;
+        unchecked {
+            uint64[] memory round_games;
+            Round memory round = Round(
+                total_rounds,
+                _difficulty,
+                round_games,
+                block.number,
+                block.number + round_duration_in_blocks
+            );
+            rounds[total_rounds] = round;
+            last_active_round_ids[_difficulty] = total_rounds;
+            total_rounds++;
+            return round.id;
+        }
     }
 
     function createGame(string calldata _difficulty)
@@ -81,48 +79,70 @@ contract RoundsManager is Ownable {
         difficultyExists(_difficulty)
         returns (string memory sudoku)
     {
-        uint32 round_id = last_active_round_ids[_difficulty];
-        if (rounds[round_id].end_blockNumber < block.number || round_id == 0) {
-            round_id = createRound(_difficulty);
-        } 
-        else {
+        unchecked {
+            uint32 round_id = last_active_round_ids[_difficulty];
+            Round memory last_active_round = rounds[round_id];
             if (
-                rounds[last_active_round_ids[_difficulty]].end_blockNumber 
-                    <=
-                block.number + min_game_duration_in_blocks
-            )   
-                revert RoundEndsSoon();
+                last_active_round.end_blockNumber < block.number || 
+                !stringsEqual(last_active_round.difficulty,_difficulty)
+            ) {
+                round_id = createRound(_difficulty);
+            } 
+            else {
+                if (
+                    rounds[last_active_round_ids[_difficulty]].end_blockNumber 
+                        <=
+                    block.number + min_game_duration_in_blocks
+                )   
+                    revert RoundEndsSoon();
+            }
+            uint64 game_id = total_games;
+            bytes32 solution;
+            (sudoku, solution) = sudokuGenerator.generateSudoku(
+                difficulty_values[_difficulty]
+            );
+            Game memory game = Game(
+                game_id,
+                round_id,
+                msg.sender,
+                sudoku,
+                solution,
+                block.number,
+                0
+            );
+            games[game_id] = game;
+            rounds[round_id].game_ids.push(game_id);
+            total_games++;
+            return sudoku;
         }
-        uint64 game_id = total_games;
-        bytes32 solution;
-        (sudoku, solution) = sudokuGenerator.generateSudoku(
-            difficulty_values[_difficulty]
-        );
-        Game memory game = Game(
-            game_id,
-            round_id,
-            msg.sender,
-            sudoku,
-            solution,
-            block.number,
-            0
-        );
-        games[game_id] = game;
-        rounds[round_id].game_ids.push(game_id);
-        total_games++;
-        return sudoku;
     }
 
-    function addNewDifficulty(string calldata name, uint8 value)
-        public
-        onlyOwner
+    // function addNewDifficulty(string calldata name, uint8 value)
+    //     public
+    //     onlyOwner
+    // {
+    //     if (value < sudokuGenerator.MIN_DIFFICULTY_VALUE || value > sudokuGenerator.MAX_DIFFICULTY_VALUE) {
+    //         revert InvalidDifficulty();
+    //     }
+    //     if (difficulty_values[name] != 0)
+    //         revert InvalidDifficulty();
+    //     difficulty_names.push(name);
+    //     difficulty_values[name] = value;
+    // }
+
+    function stringsEqual(string memory a, string memory b) 
+        internal 
+        pure 
+        returns (bool) 
     {
-        if (difficulty_values[name] != 0)
-            revert InvalidDifficulty();
-        if (value < MIN_DIFFICULTY_VALUE || value > MAX_DIFFICULTY_VALUE)
-            revert InvalidDifficulty();
-        difficulty_names.push(name);
-        difficulty_values[name] = value;
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))) );
     }
 
+    function getLastActiveRound(string calldata _difficulty)
+        public
+        view
+        returns (Round memory)
+    {
+        return rounds[last_active_round_ids[_difficulty]];
+    }
 }
