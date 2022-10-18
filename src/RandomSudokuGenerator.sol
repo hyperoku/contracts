@@ -8,8 +8,8 @@ import 'chainlink/contracts/src/v0.8/VRFV2WrapperConsumerBase.sol';
 
 contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, ConfirmedOwner {
 
-    event RequestSent(uint256 requestId, uint32 numWords);
-    event RequestFulfilled(uint256 requestId, uint256[] randomWords, uint256 payment);
+    event RequestSent(uint256 indexed requestId);
+    event RequestFulfilled(uint256 indexed requestId);
 
     struct RequestStatus {
         uint256 paid; // amount paid in link
@@ -22,32 +22,30 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
 
     uint256[] public requestIds;
     uint256 public lastRequestId;
-    uint32 callbackGasLimit = 100000;
+    uint32 callbackGasLimit = 2420000;
     uint16 constant requestConfirmations = 3;
     uint32 constant numWords = 1;
-
-    address immutable linkAddress;
 
     constructor(address _linkAddress, address _wrapperAddress)
         ConfirmedOwner(msg.sender) 
         VRFV2WrapperConsumerBase(_linkAddress, _wrapperAddress) 
-    {
-        linkAddress = _linkAddress;
-    }
+    {}
 
     function requestRandomSudoku(uint8 _difficulty) external returns (uint256 requestId) {
-        requestId = requestRandomness(callbackGasLimit, requestConfirmations, numWords);
-        s_requests[requestId] = RequestStatus({
-            paid: VRF_V2_WRAPPER.calculateRequestPrice(callbackGasLimit),
-            fulfilled: false,
-            difficulty: _difficulty,
-            sudoku: "",
-            solution: ""
-        });
-        requestIds.push(requestId);
-        lastRequestId = requestId;
-        emit RequestSent(requestId, numWords);
-        return requestId;
+        unchecked {            
+            requestId = requestRandomness(callbackGasLimit, requestConfirmations, numWords);
+            s_requests[requestId] = RequestStatus({
+                paid: VRF_V2_WRAPPER.calculateRequestPrice(callbackGasLimit),
+                fulfilled: false,
+                difficulty: _difficulty,
+                sudoku: "",
+                solution: ""
+            });
+            requestIds.push(requestId);
+            lastRequestId = requestId;
+            emit RequestSent(requestId);
+            return requestId;
+        }
     }
 
     function fulfillRandomWords(uint256 _requestId, uint256[] memory _randomWords) internal override {
@@ -59,7 +57,7 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].sudoku = sudoku;
         s_requests[_requestId].solution = solution;
-        emit RequestFulfilled(_requestId, _randomWords, s_requests[_requestId].paid);
+        emit RequestFulfilled(_requestId);
     }
 
     function getRequestStatus(uint256 _requestId)
@@ -81,7 +79,7 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
      * Allow withdraw of Link tokens from the contract
      */
     function withdrawLink() public onlyOwner {
-        LinkTokenInterface link = LinkTokenInterface(linkAddress);
+        LinkTokenInterface link = LinkTokenInterface(address(LINK));
         require(link.transfer(msg.sender, link.balanceOf(address(this))), 'Unable to transfer');
     }
 

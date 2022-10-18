@@ -115,15 +115,18 @@ contract SudokuGenerator {
             revert ValueOutOfBounds();
         }
         unchecked {
-            uint8[9][9] memory grid;
+            uint8[9][9] memory grid = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ];
             uint64 current_random_number = seed;
-
-            // reset grid
-            for (uint8 i = 0; i < 9; ++i) {
-                for (uint8 j = 0; j < 9; ++j) {
-                    grid[i][j] = 0;
-                }
-            }
 
             // fill diagonal 3x3 boxes
             uint8[9][3] memory boxes = [
@@ -140,7 +143,10 @@ contract SudokuGenerator {
                         9,
                         0
                     );
-                    (boxes[i][j], boxes[i][random_index]) = (
+                    (
+                        boxes[i][j], 
+                        boxes[i][random_index]
+                    ) = (
                         boxes[i][random_index],
                         boxes[i][j]
                     );

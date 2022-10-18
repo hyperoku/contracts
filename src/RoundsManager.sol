@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "./IRandomSudokuGenerator.sol";
-import 'chainlink/contracts/src/v0.8/ConfirmedOwner.sol';
+import "./RandomSudokuGenerator.sol";
+import "chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "forge-std/console.sol";
 
 error RoundEndsSoon();
@@ -12,7 +12,8 @@ error DifficultyNameAlreadyExists();
 error DifficultyValueAlreadyExists();
 
 contract RoundsManager is ConfirmedOwner {
-    IRandomSudokuGenerator public immutable sudokuGenerator;
+
+    RandomSudokuGenerator public immutable random_sudoku_generator;
 
     struct Game {
         uint256 request_id;
@@ -54,8 +55,9 @@ contract RoundsManager is ConfirmedOwner {
     event gameCreated(uint64 game_id);
 
     constructor(address _sudokuGenerator) ConfirmedOwner(msg.sender) {
-        sudokuGenerator = IRandomSudokuGenerator(_sudokuGenerator);
-        (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = sudokuGenerator.getDifficultyRange();
+        random_sudoku_generator = RandomSudokuGenerator(_sudokuGenerator);
+        (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = 
+            random_sudoku_generator.getDifficultyRange();
         difficulty_values["EASY"] = 37;
         difficulty_values["MEDIUM"] = 48;
         difficulty_values["HARD"] = 53;
@@ -104,7 +106,7 @@ contract RoundsManager is ConfirmedOwner {
                     block.number + min_game_duration_in_blocks
                 ) revert RoundEndsSoon();
             }
-            uint256 request_id = sudokuGenerator.requestRandomSudoku(
+            uint256 request_id = random_sudoku_generator.requestRandomSudoku(
                 difficulty_values[_difficulty]
             );
             game_id = total_games;
@@ -145,7 +147,10 @@ contract RoundsManager is ConfirmedOwner {
         pure
         returns (bool)
     {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+        return (
+            keccak256(abi.encodePacked((a))) ==
+            keccak256(abi.encodePacked((b)))
+        );
     }
 
     function getLastActiveRound(string calldata _difficulty)

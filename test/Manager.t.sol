@@ -5,29 +5,54 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../src/RoundsManager.sol";
 import "../src/SudokuGenerator.sol";
+import "../src/RandomSudokuGenerator.sol";
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
+import 'chainlink/contracts/src/v0.8/VRFCoordinatorV2.sol';
 
 contract ManagerTest is Test {
     SudokuGenerator public sudokuGenerator;
     RoundsManager public roundsManager;
+    RandomSudokuGenerator public randomSudokuGenerator;
+    address linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
+    address vrfWrapperAddress = 0x99aFAf084eBA697E584501b8Ed2c0B37Dd136693;
     IERC20 public link;
-    IERC20 public wmatic;
+    uint16 constant a = 8121;
+    uint16 constant c = 28411;
+    uint32 constant m = 134456;
 
     function setUp() public {
         sudokuGenerator = new SudokuGenerator();
-        roundsManager = new RoundsManager(address(sudokuGenerator));
-        link = IERC20(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
-        wmatic = IERC20(0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889);
+        randomSudokuGenerator = new RandomSudokuGenerator(linkAddress, vrfWrapperAddress);
+        roundsManager = new RoundsManager(address(randomSudokuGenerator));
+        link = IERC20(linkAddress);
     }
 
-    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    function compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked((_a))) == keccak256(abi.encodePacked((_b))));
     }
 
-    function testAll() public {
-        // Faucet address
-        vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
+    struct RequestStatus {
+        uint256 paid; // amount paid in link
+        bool fulfilled; // whether the request has been successfully fulfilled
+        uint8 difficulty;
+        string sudoku;
+        bytes32 solution;
     }
+
+    function testSudokuGas() public {
+        for (uint64 i = 0; i < 40000; i++) {
+            sudokuGenerator.generateSudoku(i, 37);
+        }
+    }
+
+    // function testAll() public {
+    //     // Faucet address
+    //     vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
+    //     link.transfer(address(randomSudokuGenerator), 1*10**18);
+    //     vm.stopPrank();
+    //     // roundsManager.createGame("MEDIUM");
+    //     uint256 request_id = randomSudokuGenerator.requestRandomSudoku(48);
+    // }
 
     // function testAddNewDifficulty(string memory name, uint8 value) public {
     //     uint8 min_difficulty_value = roundsManager.MIN_DIFFICULTY_VALUE();

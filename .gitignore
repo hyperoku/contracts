@@ -1,5 +1,6 @@
 out
 cache
 bin
+data/parser/target
 
 script/Counter.s.sol
