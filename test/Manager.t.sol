@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "../src/RoundsManager.sol";
 import "../src/SudokuGenerator.sol";
 import "../src/RandomSudokuGenerator.sol";
+import "../src/SeedsManager.sol";
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 import 'chainlink/contracts/src/v0.8/VRFCoordinatorV2.sol';
 
@@ -13,6 +14,7 @@ contract ManagerTest is Test {
     SudokuGenerator public sudokuGenerator;
     RoundsManager public roundsManager;
     RandomSudokuGenerator public randomSudokuGenerator;
+    SeedsManager public seedsManager;
     address linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
     address vrfWrapperAddress = 0x99aFAf084eBA697E584501b8Ed2c0B37Dd136693;
     IERC20 public link;
@@ -22,8 +24,10 @@ contract ManagerTest is Test {
 
     function setUp() public {
         sudokuGenerator = new SudokuGenerator();
-        randomSudokuGenerator = new RandomSudokuGenerator(linkAddress, vrfWrapperAddress);
+        seedsManager = new SeedsManager();
+        randomSudokuGenerator = new RandomSudokuGenerator(linkAddress, vrfWrapperAddress, address(seedsManager));
         roundsManager = new RoundsManager(address(randomSudokuGenerator));
+        seedsManager = new SeedsManager();
         link = IERC20(linkAddress);
     }
 
@@ -39,20 +43,30 @@ contract ManagerTest is Test {
         bytes32 solution;
     }
 
-    function testSudokuGas() public {
-        for (uint64 i = 0; i < 40000; i++) {
-            sudokuGenerator.generateSudoku(i, 37);
-        }
-    }
-
-    // function testAll() public {
-    //     // Faucet address
-    //     vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
-    //     link.transfer(address(randomSudokuGenerator), 1*10**18);
-    //     vm.stopPrank();
-    //     // roundsManager.createGame("MEDIUM");
-    //     uint256 request_id = randomSudokuGenerator.requestRandomSudoku(48);
+    // function testSeeds() public {
+    //     uint16[] memory seeds = new uint16[](2);
+    //     seeds[0] = 1;
+    //     seeds[1] = 2;
+    //     seedsManager.addSeeds(seeds);
+    //     uint16 seed = seedsManager.getSeed(123568126378);
+    //     assertTrue(seed != 0, "Seed should not be 0");
     // }
+
+    // function testSudokuGas() public {
+    //     for (uint64 i = 0; i < 40000; i++) {
+    //         sudokuGenerator.generateSudoku(i, 37);
+    //     }
+    // }
+
+    function testAll() public {
+        // Faucet address
+        vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
+        link.transfer(address(randomSudokuGenerator), 1*10**18);
+        vm.stopPrank();
+        roundsManager.createGame("MEDIUM");
+        RoundsManager.Round memory round = roundsManager.getRound(0);
+        assertTrue(round.id == 0, "Round id should be 0");
+    }
 
     // function testAddNewDifficulty(string memory name, uint8 value) public {
     //     uint8 min_difficulty_value = roundsManager.MIN_DIFFICULTY_VALUE();

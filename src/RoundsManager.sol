@@ -5,11 +5,11 @@ import "./RandomSudokuGenerator.sol";
 import "chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 import "forge-std/console.sol";
 
-error RoundEndsSoon();
-error DifficultyNameDoesNotExist();
-error DifficultyValueOutOfBounds();
-error DifficultyNameAlreadyExists();
-error DifficultyValueAlreadyExists();
+error ROUND_ENDS_SOON();
+error DIFFICULTY_NAME_NOT_FOUND();
+error DIFFICULTY_VALUE_OUT_OF_BOUNDS();
+error DIFFICULTY_NAME_ALREADY_EXISTS();
+error DIFFICULTY_VALUE_ALREADY_EXISTS();
 
 contract RoundsManager is ConfirmedOwner {
 
@@ -32,8 +32,9 @@ contract RoundsManager is ConfirmedOwner {
         uint256 end_blockNumber;
     }
 
-    mapping(uint32 => Round) public rounds;
-    mapping(uint64 => Game) public games;
+    mapping(uint32 => Round) private rounds;
+    mapping(uint64 => Game) private games;
+
     mapping(string => uint8) public difficulty_values;
     mapping(string => uint32) public last_active_round_ids; // DIFFICULTY -> ROUND ID
     string[] public difficulty_names = ["EASY", "MEDIUM", "HARD"];
@@ -47,15 +48,15 @@ contract RoundsManager is ConfirmedOwner {
 
     modifier difficultyExists(string calldata _difficulty) {
         if (difficulty_values[_difficulty] == 0)
-            revert DifficultyNameDoesNotExist();
+            revert DIFFICULTY_NAME_NOT_FOUND();
         _;
     }
 
     event roundCreated(uint32 round_id);
     event gameCreated(uint64 game_id);
 
-    constructor(address _sudokuGenerator) ConfirmedOwner(msg.sender) {
-        random_sudoku_generator = RandomSudokuGenerator(_sudokuGenerator);
+    constructor(address _random_sudoku_generator) ConfirmedOwner(msg.sender) {
+        random_sudoku_generator = RandomSudokuGenerator(_random_sudoku_generator);
         (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = 
             random_sudoku_generator.getDifficultyRange();
         difficulty_values["EASY"] = 37;
@@ -87,7 +88,7 @@ contract RoundsManager is ConfirmedOwner {
     }
 
     function createGame(string calldata _difficulty)
-        public
+        external
         difficultyExists(_difficulty)
         returns (uint64 game_id)
     {
@@ -104,7 +105,7 @@ contract RoundsManager is ConfirmedOwner {
                     rounds[last_active_round_ids[_difficulty]]
                         .end_blockNumber <=
                     block.number + min_game_duration_in_blocks
-                ) revert RoundEndsSoon();
+                ) revert ROUND_ENDS_SOON();
             }
             uint256 request_id = random_sudoku_generator.requestRandomSudoku(
                 difficulty_values[_difficulty]
@@ -126,38 +127,46 @@ contract RoundsManager is ConfirmedOwner {
         }
     }
 
-    function addNewDifficulty(string calldata name, uint8 value)
-        public
+    function addNewDifficulty(string calldata _name, uint8 _value)
+        external
         onlyOwner
     {
-        if (value < MIN_DIFFICULTY_VALUE || value > MAX_DIFFICULTY_VALUE) {
-            revert DifficultyValueOutOfBounds();
+        if (_value < MIN_DIFFICULTY_VALUE || _value > MAX_DIFFICULTY_VALUE) {
+            revert DIFFICULTY_VALUE_OUT_OF_BOUNDS();
         }
-        if (difficulty_values[name] != 0) revert DifficultyNameAlreadyExists();
+        if (difficulty_values[_name] != 0) revert DIFFICULTY_NAME_ALREADY_EXISTS();
         for (uint8 i = 0; i < difficulty_names.length; i++) {
-            if (difficulty_values[difficulty_names[i]] == value)
-                revert DifficultyValueAlreadyExists();
+            if (difficulty_values[difficulty_names[i]] == _value)
+                revert DIFFICULTY_VALUE_ALREADY_EXISTS();
         }
-        difficulty_names.push(name);
-        difficulty_values[name] = value;
+        difficulty_names.push(_name);
+        difficulty_values[_name] = _value;
     }
 
-    function stringsEqual(string memory a, string memory b)
+    function stringsEqual(string memory _a, string memory _b)
         internal
         pure
         returns (bool)
     {
         return (
-            keccak256(abi.encodePacked((a))) ==
-            keccak256(abi.encodePacked((b)))
+            keccak256(abi.encodePacked((_a))) ==
+            keccak256(abi.encodePacked((_b)))
         );
     }
 
     function getLastActiveRound(string calldata _difficulty)
-        public
+        external
         view
         returns (Round memory)
     {
         return rounds[last_active_round_ids[_difficulty]];
+    }
+
+    function getGame(uint64 _game_id) external view returns (Game memory) {
+        return games[_game_id];
+    }
+
+    function getRound(uint32 _round_id) external view returns (Round memory) {
+        return rounds[_round_id];
     }
 }
