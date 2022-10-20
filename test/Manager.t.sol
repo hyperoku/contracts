@@ -17,7 +17,7 @@ contract ManagerTest is Test {
     SeedsManager public seedsManager;
     address linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
     address vrfWrapperAddress = 0x99aFAf084eBA697E584501b8Ed2c0B37Dd136693;
-    IERC20 public link;
+    IERC20 public link = IERC20(linkAddress);
     uint16 constant a = 8121;
     uint16 constant c = 28411;
     uint32 constant m = 134456;
@@ -28,7 +28,6 @@ contract ManagerTest is Test {
         randomSudokuGenerator = new RandomSudokuGenerator(linkAddress, vrfWrapperAddress, address(seedsManager));
         roundsManager = new RoundsManager(address(randomSudokuGenerator));
         seedsManager = new SeedsManager();
-        link = IERC20(linkAddress);
     }
 
     function compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
@@ -42,32 +41,6 @@ contract ManagerTest is Test {
         string sudoku;
         bytes32 solution;
     }
-
-    function testSeeds() public {
-        uint32[] memory seeds = new uint32[](4);
-        seeds[0] = 0;
-        seeds[1] = 700;
-        seeds[2] = 1600;
-        seeds[3] = 3147;
-        seedsManager.addSeeds(seeds);
-        for(uint8 i=0; i<4; i++) {
-            uint32 seed = seedsManager.getSeed(i);
-            console.log(seed);
-        }
-        uint32 last = seedsManager.getLastSeed();
-        console.log(last);
-        seedsManager.removeLastNSeeds(2000);
-        for(uint8 i=0; i<4; i++) {
-            uint32 seed = seedsManager.getSeed(i);
-            console.log(seed);
-        }
-    }
-
-    // function testSudokuGas() public {
-    //     for (uint64 i = 0; i < 40000; i++) {
-    //         sudokuGenerator.generateSudoku(i, 37);
-    //     }
-    // }
 
     // function testAll() public {
     //     // Faucet address

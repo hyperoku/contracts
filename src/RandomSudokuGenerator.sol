@@ -2,10 +2,12 @@
 pragma solidity ^0.8.13;
 
 import "./SudokuGenerator.sol";
-import "./ISeedsManager.sol";
-import "forge-std/console.sol";
-import 'chainlink/contracts/src/v0.8/ConfirmedOwner.sol';
 import 'chainlink/contracts/src/v0.8/VRFV2WrapperConsumerBase.sol';
+import 'chainlink/contracts/src/v0.8/ConfirmedOwner.sol';
+import "./ISeedsManager.sol";
+
+error UNABLE_TO_TRANSFER();
+error REQUEST_NOT_FOUND();
 
 contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, ConfirmedOwner {
 
@@ -16,12 +18,13 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
 
     struct RequestStatus {
         uint256 paid; // amount paid in link
-        bool fulfilled; // whether the request has been successfully fulfilled
+        bool fulfilled;
         uint8 difficulty;
         string sudoku;
         bytes32 solution;
     }
-    mapping(uint256 => RequestStatus) public s_requests; /* requestId --> requestStatus */
+
+    mapping(uint256 => RequestStatus) public s_requests;
 
     uint256[] public requestIds;
     uint256 public lastRequestId;
@@ -37,6 +40,9 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
     }
 
     function requestRandomSudoku(uint8 _difficulty) external returns (uint256 requestId) {
+        if (_difficulty < MIN_DIFFICULTY_VALUE || _difficulty > MAX_DIFFICULTY_VALUE) {
+            revert VALUE_OUT_OF_BOUNDS();
+        }
         unchecked {            
             requestId = requestRandomness(callbackGasLimit, requestConfirmations, numWords);
             s_requests[requestId] = RequestStatus({
@@ -54,11 +60,12 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
     }
 
     function fulfillRandomWords(uint256 _requestId, uint256[] memory _randomWords) internal override {
-        require(s_requests[_requestId].paid > 0, 'request not found');
-        console.log(_randomWords[0]);
+        if (s_requests[_requestId].paid == 0) {
+            revert REQUEST_NOT_FOUND();
+        }
         string memory sudoku;
         bytes32 solution;
-        uint64 seed = seedsManager.getSeed(uint32(_randomWords[0]));
+        uint32 seed = seedsManager.getSeed(uint32(_randomWords[0]));
         (sudoku, solution) = this.generateSudoku(seed, s_requests[_requestId].difficulty);
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].sudoku = sudoku;
@@ -69,16 +76,13 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
     function getRequestStatus(uint256 _requestId)
         external
         view
-        returns (
-            uint256 paid,
-            bool fulfilled,
-            string memory sudoku,
-            bytes32 solution
-        )
+        returns (RequestStatus memory request)
     {
-        require(s_requests[_requestId].paid > 0, 'request not found');
-        RequestStatus memory request = s_requests[_requestId];
-        return (request.paid, request.fulfilled, request.sudoku, request.solution);
+        if (s_requests[_requestId].paid == 0) {
+            revert REQUEST_NOT_FOUND();
+        }
+        request = s_requests[_requestId];
+        return request;
     }
 
     /**
@@ -86,7 +90,9 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
      */
     function withdrawLink() external onlyOwner {
         LinkTokenInterface link = LinkTokenInterface(address(LINK));
-        require(link.transfer(msg.sender, link.balanceOf(address(this))), 'Unable to transfer');
+        if (!link.transfer(msg.sender, link.balanceOf(address(this)))) {
+            revert UNABLE_TO_TRANSFER();
+        }
     }
 
 }

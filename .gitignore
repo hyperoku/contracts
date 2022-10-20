@@ -4,3 +4,4 @@ bin
 data/parser/target
 
 script/Counter.s.sol
+lcov.info

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "forge-std/console.sol";
 import "openzeppelin-contracts/utils/Strings.sol";
 
-error ValueOutOfBounds();
+error VALUE_OUT_OF_BOUNDS();
 
 contract SudokuGenerator {
     // random0 function values: https://en.wikipedia.org/wiki/Linear_congruential_generator
@@ -16,12 +15,12 @@ contract SudokuGenerator {
     uint8 public constant MAX_DIFFICULTY_VALUE = 64;
 
     function generateRandomValue(
-        uint64 _current_random_number,
+        uint32 _current_random_number,
         uint8 mod,
         uint8 offset
-    ) internal pure returns (uint64 new_random_number, uint8 value) {
+    ) internal pure returns (uint32 new_random_number, uint8 value) {
         unchecked {
-            new_random_number = uint64(a * _current_random_number + c) % m;
+            new_random_number = uint32(a * _current_random_number + c) % m;
             value =
                 uint8(
                     uint256(keccak256(abi.encodePacked(new_random_number))) %
@@ -104,7 +103,7 @@ contract SudokuGenerator {
         }
     }
 
-    function generateSudoku(uint64 seed, uint8 difficulty)
+    function generateSudoku(uint32 seed, uint8 difficulty)
         external
         returns (string memory sudoku, bytes32 solution)
     {
@@ -112,7 +111,7 @@ contract SudokuGenerator {
             difficulty < MIN_DIFFICULTY_VALUE ||
             difficulty > MAX_DIFFICULTY_VALUE
         ) {
-            revert ValueOutOfBounds();
+            revert VALUE_OUT_OF_BOUNDS();
         }
         unchecked {
             uint8[9][9] memory grid = [
@@ -126,7 +125,7 @@ contract SudokuGenerator {
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0]
             ];
-            uint64 current_random_number = seed;
+            uint32 current_random_number = seed;
 
             // fill diagonal 3x3 boxes
             uint8[9][3] memory boxes = [
