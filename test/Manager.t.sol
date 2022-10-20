@@ -44,12 +44,19 @@ contract ManagerTest is Test {
     }
 
     function testSeeds() public {
-        uint16[] memory seeds = new uint16[](4);
+        uint32[] memory seeds = new uint32[](4);
         seeds[0] = 0;
         seeds[1] = 700;
         seeds[2] = 1600;
-        seeds[3] = 2989;
+        seeds[3] = 3147;
         seedsManager.addSeeds(seeds);
+        for(uint8 i=0; i<4; i++) {
+            uint32 seed = seedsManager.getSeed(i);
+            console.log(seed);
+        }
+        uint32 last = seedsManager.getLastSeed();
+        console.log(last);
+        seedsManager.removeLastNSeeds(2000);
         for(uint8 i=0; i<4; i++) {
             uint32 seed = seedsManager.getSeed(i);
             console.log(seed);

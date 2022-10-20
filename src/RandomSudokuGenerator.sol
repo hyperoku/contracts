@@ -58,7 +58,7 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
         console.log(_randomWords[0]);
         string memory sudoku;
         bytes32 solution;
-        uint64 seed = seedsManager.getSeed(_randomWords[0]);
+        uint64 seed = seedsManager.getSeed(uint32(_randomWords[0]));
         (sudoku, solution) = this.generateSudoku(seed, s_requests[_requestId].difficulty);
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].sudoku = sudoku;
