@@ -11,15 +11,25 @@ where P: AsRef<Path>, {
 
 fn main() {
     if let Ok(lines) = read_lines("./gasValuesAdmitted.txt") {
-        let mut contents = String::new();
-        // concats all lines (numbers) into one string
+
+        let mut gas_values: Vec<i32> = Vec::new();
+
         for line in lines {
-            contents = contents + &line.unwrap() + ",";
+            if let Ok(ip) = line {
+                gas_values.push(ip.parse::<i32>().unwrap());
+            }
         }
-        // removes last ","
-        contents.pop();
-        // enclose brackets
+
+        gas_values.sort();
+
+        let mut contents = gas_values
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
         contents = "[".to_owned()+&contents+"]";
         let _result = fs::write("data.json", contents);
+        
     }
 }

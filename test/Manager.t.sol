@@ -43,14 +43,18 @@ contract ManagerTest is Test {
         bytes32 solution;
     }
 
-    // function testSeeds() public {
-    //     uint16[] memory seeds = new uint16[](2);
-    //     seeds[0] = 1;
-    //     seeds[1] = 2;
-    //     seedsManager.addSeeds(seeds);
-    //     uint16 seed = seedsManager.getSeed(123568126378);
-    //     assertTrue(seed != 0, "Seed should not be 0");
-    // }
+    function testSeeds() public {
+        uint16[] memory seeds = new uint16[](4);
+        seeds[0] = 0;
+        seeds[1] = 700;
+        seeds[2] = 1600;
+        seeds[3] = 2989;
+        seedsManager.addSeeds(seeds);
+        for(uint8 i=0; i<4; i++) {
+            uint32 seed = seedsManager.getSeed(i);
+            console.log(seed);
+        }
+    }
 
     // function testSudokuGas() public {
     //     for (uint64 i = 0; i < 40000; i++) {
@@ -58,15 +62,15 @@ contract ManagerTest is Test {
     //     }
     // }
 
-    function testAll() public {
-        // Faucet address
-        vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
-        link.transfer(address(randomSudokuGenerator), 1*10**18);
-        vm.stopPrank();
-        roundsManager.createGame("MEDIUM");
-        RoundsManager.Round memory round = roundsManager.getRound(0);
-        assertTrue(round.id == 0, "Round id should be 0");
-    }
+    // function testAll() public {
+    //     // Faucet address
+    //     vm.startPrank(0xE84D601E5D945031129a83E5602be0CC7f182Cf3);
+    //     link.transfer(address(randomSudokuGenerator), 1*10**18);
+    //     vm.stopPrank();
+    //     roundsManager.createGame("MEDIUM");
+    //     RoundsManager.Round memory round = roundsManager.getRound(0);
+    //     assertTrue(round.id == 0, "Round id should be 0");
+    // }
 
     // function testAddNewDifficulty(string memory name, uint8 value) public {
     //     uint8 min_difficulty_value = roundsManager.MIN_DIFFICULTY_VALUE();
