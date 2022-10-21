@@ -8,7 +8,7 @@ import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 
 contract RandomSudokuGeneratorTest is Test {
 
-    ISeedsManager public seedsManager;
+    SeedsManager public seedsManager;
     RandomSudokuGenerator public randomSudokuGenerator;
     
     address constant linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
@@ -51,7 +51,7 @@ contract RandomSudokuGeneratorTest is Test {
         randomSudokuGenerator.requestRandomSudoku(100);
     }
 
-    function testRawFulfillRandomWordsNotCallableByAnyone() public {
+    function testRawFulfillRandomWordsFailsNotCallableByAnyone() public {
         vm.expectRevert("only VRF V2 wrapper can fulfill");
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 123456789;
@@ -70,7 +70,7 @@ contract RandomSudokuGeneratorTest is Test {
         uint256 balanceBefore = link.balanceOf(address(this));
         randomSudokuGenerator.withdrawLink();
         uint256 balanceAfter = link.balanceOf(address(this));
-        assert(balanceAfter == balanceBefore + 1*10**18);
+        assertTrue(balanceAfter == balanceBefore + 1*10**18, "balance should be increased by 1 LINK");
     }
 
     function testWithdrawLinkFailsIfNoOwner() public {
@@ -79,7 +79,7 @@ contract RandomSudokuGeneratorTest is Test {
         randomSudokuGenerator.withdrawLink();
     }
 
-    function testGetterShouldFailIfRequestDoesNotExist() public {
+    function testGetterShouldFailsIfRequestDoesNotExist() public {
         vm.expectRevert(REQUEST_NOT_FOUND.selector);
         randomSudokuGenerator.getRequestStatus(123456);
     }

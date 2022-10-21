@@ -12,11 +12,11 @@ contract SeedsManagerTest is Test {
         seedsManager = new SeedsManager();
     }
 
-    function testGetterMethods() public view {
+    function testGetterMethods() public {
         uint32 seed = seedsManager.getSeed(1);
-        assert(seed == 3);
         uint32 last = seedsManager.getLastSeed();
-        assert(last == 3145);
+        assertTrue(seed == 3, "seed should be 3 (see seeds array)");
+        assertTrue(last == 3145, "last seed should be 3145 (see seeds array)");
     }
 
     function testAddSeeds() public {
@@ -28,23 +28,23 @@ contract SeedsManagerTest is Test {
         seeds[4] = 3148;
         seedsManager.addSeeds(seeds);
         uint32 last = seedsManager.getLastSeed();
-        assert(last == 3148);
         uint32 seed0 = seedsManager.getSeed(0);
         uint32 seed1 = seedsManager.getSeed(1);
-        assert(seed0 == 0);
-        assert(seed1 == 3);
+        assertTrue(last == 3148, "last seed should be 3148");
+        assertTrue(seed0 == 0, "seed 0 should be 0 (see seeds array)");
+        assertTrue(seed1 == 3, "seed 1 should be 3 (see seeds array)");
     }
 
     function testRemoveLastNSeeds() public {
         seedsManager.removeLastNSeeds(3);
         uint32 last = seedsManager.getLastSeed();
-        assert(last == 3140);
+        assertTrue(last == 3140, "last seed should be 3140 after removal (see seeds array)");
     }
 
     function testRemoveLastNSeedsEmptiesTheArray() public {
         seedsManager.removeLastNSeeds(2000);
         uint32 last = seedsManager.getLastSeed();
-        assert(last == 0);
+        assertTrue(last == 0, "seeds array should be empty");
     }
 
 }

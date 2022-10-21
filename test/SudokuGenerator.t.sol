@@ -12,18 +12,18 @@ contract SudokuGeneratorTest is Test {
         sudokuGenerator = new SudokuGenerator();
     }
 
-    function testGetDifficultyRange() public view {
+    function testGetDifficultyRange() public {
         (uint8 min, uint8 max) = sudokuGenerator.getDifficultyRange();
-        assert(min != 0 && max != 0);
+        assertTrue(min != 0 && max != 0, "min and max should not be 0");
     }
 
     function testGenerateSudoku() public {
         (string memory sudoku, bytes32 solution) = sudokuGenerator.generateSudoku(0, 40);
-        assert(bytes(sudoku).length == 81);
-        assert(solution != 0);
+        assertTrue(bytes(sudoku).length == 81, "sudoku should be 81 characters long");
+        assertTrue(solution != 0, "solution should not be 0");
     }
 
-    function testGenerateSudokuShouldFail() public {
+    function testGenerateSudokuFailsOutOfBounds() public {
         vm.expectRevert(VALUE_OUT_OF_BOUNDS.selector);
         sudokuGenerator.generateSudoku(0, 0);
         vm.expectRevert(VALUE_OUT_OF_BOUNDS.selector);

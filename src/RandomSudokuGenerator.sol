@@ -4,14 +4,14 @@ pragma solidity ^0.8.13;
 import "./SudokuGenerator.sol";
 import 'chainlink/contracts/src/v0.8/VRFV2WrapperConsumerBase.sol';
 import 'chainlink/contracts/src/v0.8/ConfirmedOwner.sol';
-import "./ISeedsManager.sol";
+import "./SeedsManager.sol";
 
 error UNABLE_TO_TRANSFER();
 error REQUEST_NOT_FOUND();
 
 contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, ConfirmedOwner {
 
-    ISeedsManager public seedsManager;
+    SeedsManager public seedsManager;
 
     event RequestSent(uint256 indexed requestId);
     event RequestFulfilled(uint256 indexed requestId);
@@ -36,7 +36,7 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
         ConfirmedOwner(msg.sender) 
         VRFV2WrapperConsumerBase(_linkAddress, _wrapperAddress)
     {
-        seedsManager = ISeedsManager(_seedsManager);
+        seedsManager = SeedsManager(_seedsManager);
     }
 
     function requestRandomSudoku(uint8 _difficulty) external returns (uint256 requestId) {
