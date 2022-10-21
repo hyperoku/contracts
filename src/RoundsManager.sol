@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import "./RandomSudokuGenerator.sol";
 import "chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
-import "forge-std/console.sol";
 
 error ROUND_ENDS_SOON();
 error DIFFICULTY_NAME_NOT_FOUND();
@@ -97,7 +96,7 @@ contract RoundsManager is ConfirmedOwner {
             Round memory last_active_round = rounds[round_id];
             if (
                 last_active_round.end_blockNumber < block.number ||
-                !stringsEqual(last_active_round.difficulty, _difficulty)
+                !(stringsEqual(last_active_round.difficulty, _difficulty))
             ) {
                 round_id = createRound(_difficulty);
             } else {
@@ -134,7 +133,9 @@ contract RoundsManager is ConfirmedOwner {
         if (_value < MIN_DIFFICULTY_VALUE || _value > MAX_DIFFICULTY_VALUE) {
             revert DIFFICULTY_VALUE_OUT_OF_BOUNDS();
         }
-        if (difficulty_values[_name] != 0) revert DIFFICULTY_NAME_ALREADY_EXISTS();
+        if (difficulty_values[_name] != 0) {
+            revert DIFFICULTY_NAME_ALREADY_EXISTS();
+        }
         for (uint8 i = 0; i < difficulty_names.length; i++) {
             if (difficulty_values[difficulty_names[i]] == _value)
                 revert DIFFICULTY_VALUE_ALREADY_EXISTS();
@@ -143,11 +144,16 @@ contract RoundsManager is ConfirmedOwner {
         difficulty_values[_name] = _value;
     }
 
+    function getDifficultyNames() external view returns (string[] memory) {
+        return difficulty_names;
+    }
+
     function stringsEqual(string memory _a, string memory _b)
         internal
         pure
         returns (bool)
     {
+        if (bytes(_a).length != bytes(_b).length) return false;
         return (
             keccak256(abi.encodePacked((_a))) ==
             keccak256(abi.encodePacked((_b)))

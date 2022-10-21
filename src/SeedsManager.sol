@@ -2,7 +2,6 @@
 pragma solidity ^0.8.13;
 
 import "./ISeedsManager.sol";
-import "forge-std/console.sol";
 import "chainlink/contracts/src/v0.8/ConfirmedOwner.sol";
 
 contract SeedsManager is ISeedsManager, ConfirmedOwner {

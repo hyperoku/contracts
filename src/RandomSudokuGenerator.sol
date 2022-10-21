@@ -55,7 +55,6 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
             requestIds.push(requestId);
             lastRequestId = requestId;
             emit RequestSent(requestId);
-            return requestId;
         }
     }
 
@@ -82,7 +81,6 @@ contract RandomSudokuGenerator is SudokuGenerator, VRFV2WrapperConsumerBase, Con
             revert REQUEST_NOT_FOUND();
         }
         request = s_requests[_requestId];
-        return request;
     }
 
     /**

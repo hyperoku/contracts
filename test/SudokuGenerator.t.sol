@@ -30,10 +30,4 @@ contract SudokuGeneratorTest is Test {
         sudokuGenerator.generateSudoku(0, 100);
     }
 
-    function testGenerations(uint32 seed) public {
-        (string memory sudoku, bytes32 solution) = sudokuGenerator.generateSudoku(seed, 40);
-        assert(bytes(sudoku).length == 81);
-        assert(solution != 0);
-    }
-
 }

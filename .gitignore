@@ -2,6 +2,7 @@ out
 cache
 bin
 data/parser/target
+report
 
 script/Counter.s.sol
 lcov.info

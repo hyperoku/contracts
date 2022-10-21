@@ -14,6 +14,7 @@ contract RandomSudokuGeneratorTest is Test {
     address constant linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
     address constant vrfWrapperAddress = 0x99aFAf084eBA697E584501b8Ed2c0B37Dd136693;
     address constant faucet = 0xE84D601E5D945031129a83E5602be0CC7f182Cf3;
+
     IERC20 public link = IERC20(linkAddress);
 
     function setUp() public {
@@ -21,15 +22,14 @@ contract RandomSudokuGeneratorTest is Test {
         randomSudokuGenerator = new RandomSudokuGenerator(
             linkAddress, vrfWrapperAddress, address(seedsManager)
         );
-    }
-
-    function testRequestRandomSudokuAndFulfill() public {
         vm.startPrank(faucet);
         link.transfer(address(randomSudokuGenerator), 1*10**18);
         vm.stopPrank();
+    }
+
+    function testRequestRandomSudokuAndFulfill() public {
         uint256 requestId = randomSudokuGenerator.requestRandomSudoku(35);
-        
-        assert(requestId != 0);
+        assertTrue(requestId != 0, "requestId should not be 0");
 
         // EMULATE CHAINLINK CALLBACK --> we are now the vrf wrapper :P
         vm.startPrank(vrfWrapperAddress);
@@ -38,17 +38,13 @@ contract RandomSudokuGeneratorTest is Test {
         randomSudokuGenerator.rawFulfillRandomWords(requestId, randomWords);
         vm.stopPrank();
         RandomSudokuGenerator.RequestStatus memory request = randomSudokuGenerator.getRequestStatus(requestId);
-        
-        assert(request.fulfilled);
-        assert(request.paid > 0);
-        assert(bytes(request.sudoku).length == 81);
-        assert(request.solution != 0);
+        assertTrue(request.fulfilled, "request should be fulfilled");
+        assertTrue(request.paid > 0, "request should be paid");
+        assertTrue(bytes(request.sudoku).length == 81, "sudoku should be 81 chars long");
+        assertTrue(request.solution != 0, "solution should not be 0");
     }
 
     function testRequestRandomSudokuFailsDifficultyOOB() public {
-        vm.startPrank(faucet);
-        link.transfer(address(randomSudokuGenerator), 1*10**18);
-        vm.stopPrank();
         vm.expectRevert(VALUE_OUT_OF_BOUNDS.selector);
         randomSudokuGenerator.requestRandomSudoku(0);
         vm.expectRevert(VALUE_OUT_OF_BOUNDS.selector);
@@ -71,13 +67,9 @@ contract RandomSudokuGeneratorTest is Test {
     }
 
     function testWithdrawLink() public {
-        vm.startPrank(faucet);
-        link.transfer(address(randomSudokuGenerator), 1*10**18);
-        vm.stopPrank();
         uint256 balanceBefore = link.balanceOf(address(this));
         randomSudokuGenerator.withdrawLink();
         uint256 balanceAfter = link.balanceOf(address(this));
-        
         assert(balanceAfter == balanceBefore + 1*10**18);
     }
 

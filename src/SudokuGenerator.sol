@@ -70,9 +70,10 @@ contract SudokuGenerator {
                 i = i + 1;
                 j = 0;
             }
-            if (i >= 9 && j >= 9) {
-                return true;
-            }
+            // CHECK IF THIS BRANCH IS USEFUL
+            // if (i >= 9 && j >= 9) {
+            //     return true;
+            // }
             if (i < 3) {
                 if (j < 3) {
                     j = 3;
