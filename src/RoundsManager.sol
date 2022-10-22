@@ -9,6 +9,9 @@ error DIFFICULTY_NAME_NOT_FOUND();
 error DIFFICULTY_VALUE_OUT_OF_BOUNDS();
 error DIFFICULTY_NAME_ALREADY_EXISTS();
 error DIFFICULTY_VALUE_ALREADY_EXISTS();
+error PLAYER_IS_NOT_THE_OWNER();
+error SOLUTION_IS_WRONG();
+error GAME_ALREADY_SOLVED();
 
 contract RoundsManager is ConfirmedOwner {
 
@@ -51,8 +54,9 @@ contract RoundsManager is ConfirmedOwner {
         _;
     }
 
-    event roundCreated(uint32 round_id);
-    event gameCreated(uint64 game_id);
+    event roundCreated(uint32 indexed round_id);
+    event gameCreated(uint64 indexed game_id);
+    event gameSolved(uint64 indexed game_id);
 
     constructor(address _random_sudoku_generator) ConfirmedOwner(msg.sender) {
         random_sudoku_generator = RandomSudokuGenerator(_random_sudoku_generator);
@@ -124,6 +128,29 @@ contract RoundsManager is ConfirmedOwner {
             emit gameCreated(game_id);
             return game_id;
         }
+    }
+
+    function solveGame(uint64 _game_id, string calldata _player_solution)
+        external
+    {
+        Game memory game = games[_game_id];
+        if (game.player != msg.sender) {
+            revert PLAYER_IS_NOT_THE_OWNER();
+        }
+        if (game.end_blockNumber != 0) {
+            revert GAME_ALREADY_SOLVED();
+        }
+        if (bytes(_player_solution).length != 81) {
+            revert SOLUTION_IS_WRONG();
+        }
+        bytes32 player_solution_hash = keccak256(abi.encodePacked(_player_solution));
+        bytes32 real_solution = random_sudoku_generator.getRequestStatus(game.request_id).solution;
+        if (player_solution_hash == real_solution) {
+            games[_game_id].end_blockNumber = block.number;
+        } else {
+            revert SOLUTION_IS_WRONG();
+        }
+        emit gameSolved(_game_id);
     }
 
     function addNewDifficulty(string calldata _name, uint8 _value)

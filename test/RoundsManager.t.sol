@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 import "../src/RoundsManager.sol";
 import "../src/SudokuGenerator.sol";
 import "../src/RandomSudokuGenerator.sol";
@@ -83,6 +84,28 @@ contract ManagerTest is Test {
         vm.roll(block.number + round_duration_in_blocks - 2);
         vm.expectRevert(ROUND_ENDS_SOON.selector);
         roundsManager.createGame("MEDIUM");
+    }
+
+    function testSolveGameAndItsFailures() public {
+        uint64 game_id = roundsManager.createGame("MEDIUM");
+        RoundsManager.Game memory game = roundsManager.getGame(game_id);
+        // EMULATE CHAINLINK CALLBACK --> we are now the vrf wrapper :P
+        vm.startPrank(vrfWrapperAddress);
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 0;
+        randomSudokuGenerator.rawFulfillRandomWords(game.request_id, randomWords);
+        vm.expectRevert(PLAYER_IS_NOT_THE_OWNER.selector);
+        roundsManager.solveGame(game_id, "12378917283719");
+        vm.stopPrank();
+        vm.expectRevert(SOLUTION_IS_WRONG.selector); // solution too short
+        roundsManager.solveGame(game_id, "123456789");
+        vm.expectRevert(SOLUTION_IS_WRONG.selector); // solution wrong
+        string memory solution = "123125698629487315185693274278346951931758462456219783514962837762831549893574126";
+        roundsManager.solveGame(game_id, solution);
+        solution = "347125698629487315185693274278346951931758462456219783514962837762831549893574126";
+        roundsManager.solveGame(game_id, solution);
+        vm.expectRevert(GAME_ALREADY_SOLVED.selector);
+        roundsManager.solveGame(game_id, solution);
     }
 
     function testAddNewDifficulty() public {
