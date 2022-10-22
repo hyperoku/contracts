@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "../src/SudokuGenerator.sol";
 
 contract SudokuGeneratorTest is Test {
-
     SudokuGenerator public sudokuGenerator;
 
     function setUp() public {
@@ -19,7 +18,10 @@ contract SudokuGeneratorTest is Test {
 
     function testGenerateSudoku() public {
         (string memory sudoku, bytes32 solution) = sudokuGenerator.generateSudoku(0, 40);
-        assertTrue(bytes(sudoku).length == 81, "sudoku should be 81 characters long");
+        assertTrue(
+            bytes(sudoku).length == 81,
+            "sudoku should be 81 characters long"
+        );
         assertTrue(solution != 0, "solution should not be 0");
     }
 
@@ -29,5 +31,4 @@ contract SudokuGeneratorTest is Test {
         vm.expectRevert(VALUE_OUT_OF_BOUNDS.selector);
         sudokuGenerator.generateSudoku(0, 100);
     }
-
 }

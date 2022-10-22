@@ -211,11 +211,7 @@ contract SudokuGenerator {
         }
     }
 
-    function getDifficultyRange()
-        external
-        pure
-        returns (uint8 min, uint8 max)
-    {
+    function getDifficultyRange() external pure returns (uint8 min, uint8 max) {
         return (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE);
     }
 }

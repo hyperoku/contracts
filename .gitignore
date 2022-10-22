@@ -3,6 +3,8 @@ cache
 bin
 data/parser/target
 report
+broadcast
 
 script/Counter.s.sol
 lcov.info
+.env

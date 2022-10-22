@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "../src/SeedsManager.sol";
 
 contract SeedsManagerTest is Test {
-
     SeedsManager public seedsManager;
 
     function setUp() public {
@@ -38,7 +37,10 @@ contract SeedsManagerTest is Test {
     function testRemoveLastNSeeds() public {
         seedsManager.removeLastNSeeds(3);
         uint32 last = seedsManager.getLastSeed();
-        assertTrue(last == 3140, "last seed should be 3140 after removal (see seeds array)");
+        assertTrue(
+            last == 3140,
+            "last seed should be 3140 after removal (see seeds array)"
+        );
     }
 
     function testRemoveLastNSeedsEmptiesTheArray() public {
@@ -46,5 +48,4 @@ contract SeedsManagerTest is Test {
         uint32 last = seedsManager.getLastSeed();
         assertTrue(last == 0, "seeds array should be empty");
     }
-
 }

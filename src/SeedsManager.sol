@@ -12,8 +12,8 @@ contract SeedsManager is ConfirmedOwner {
 
     function addSeeds(uint32[] calldata _seeds) external onlyOwner {
         unchecked {
-            for(uint32 i=0; i<_seeds.length; i++) {
-                if (_seeds[i] <= seeds[seeds.length-1]) {
+            for (uint32 i = 0; i < _seeds.length; i++) {
+                if (_seeds[i] <= seeds[seeds.length - 1]) {
                     continue;
                 }
                 seeds.push(_seeds[i]);
@@ -23,8 +23,10 @@ contract SeedsManager is ConfirmedOwner {
 
     function removeLastNSeeds(uint32 _count) external onlyOwner {
         unchecked {
-            _count = _count > uint32(seeds.length-1) ? uint32(seeds.length-1) : _count;
-            for(uint32 i=0; i<_count; i++) {
+            _count = _count > uint32(seeds.length - 1) 
+                ? uint32(seeds.length - 1) 
+                : _count;
+            for (uint32 i = 0; i < _count; i++) {
                 seeds.pop();
             }
         }
@@ -35,7 +37,7 @@ contract SeedsManager is ConfirmedOwner {
     }
 
     function getLastSeed() external view returns (uint32) {
-        return seeds[seeds.length-1];
+        return seeds[seeds.length - 1];
     }
 
 }

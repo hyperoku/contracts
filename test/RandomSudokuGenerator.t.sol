@@ -7,23 +7,24 @@ import "../src/RandomSudokuGenerator.sol";
 import "openzeppelin-contracts/token/ERC20/IERC20.sol";
 
 contract RandomSudokuGeneratorTest is Test {
-
     SeedsManager public seedsManager;
     RandomSudokuGenerator public randomSudokuGenerator;
-    
-    address constant linkAddress = 0x326C977E6efc84E512bB9C30f76E30c160eD06FB;
-    address constant vrfWrapperAddress = 0x99aFAf084eBA697E584501b8Ed2c0B37Dd136693;
-    address constant faucet = 0xE84D601E5D945031129a83E5602be0CC7f182Cf3;
+
+    address linkAddress = vm.envAddress("LINK_ADDRESS");
+    address vrfWrapperAddress = vm.envAddress("VRF_WRAPPER_ADDRESS");
+    address faucet = vm.envAddress("FAUCET_ADDRESS");
 
     IERC20 public link = IERC20(linkAddress);
 
     function setUp() public {
         seedsManager = new SeedsManager();
         randomSudokuGenerator = new RandomSudokuGenerator(
-            linkAddress, vrfWrapperAddress, address(seedsManager)
+            linkAddress,
+            vrfWrapperAddress,
+            address(seedsManager)
         );
         vm.startPrank(faucet);
-        link.transfer(address(randomSudokuGenerator), 1*10**18);
+        link.transfer(address(randomSudokuGenerator), 1 * 10**18);
         vm.stopPrank();
     }
 
@@ -37,10 +38,14 @@ contract RandomSudokuGeneratorTest is Test {
         randomWords[0] = 123456789;
         randomSudokuGenerator.rawFulfillRandomWords(requestId, randomWords);
         vm.stopPrank();
-        RandomSudokuGenerator.RequestStatus memory request = randomSudokuGenerator.getRequestStatus(requestId);
+        RandomSudokuGenerator
+            .RequestStatus memory request = randomSudokuGenerator.getRequestStatus(requestId);
         assertTrue(request.fulfilled, "request should be fulfilled");
         assertTrue(request.paid > 0, "request should be paid");
-        assertTrue(bytes(request.sudoku).length == 81, "sudoku should be 81 chars long");
+        assertTrue(
+            bytes(request.sudoku).length == 81,
+            "sudoku should be 81 chars long"
+        );
         assertTrue(request.solution != 0, "solution should not be 0");
     }
 
@@ -70,7 +75,10 @@ contract RandomSudokuGeneratorTest is Test {
         uint256 balanceBefore = link.balanceOf(address(this));
         randomSudokuGenerator.withdrawLink();
         uint256 balanceAfter = link.balanceOf(address(this));
-        assertTrue(balanceAfter == balanceBefore + 1*10**18, "balance should be increased by 1 LINK");
+        assertTrue(
+            balanceAfter == balanceBefore + 1 * 10**18,
+            "balance should be increased by 1 LINK"
+        );
     }
 
     function testWithdrawLinkFailsIfNoOwner() public {
@@ -83,5 +91,4 @@ contract RandomSudokuGeneratorTest is Test {
         vm.expectRevert(REQUEST_NOT_FOUND.selector);
         randomSudokuGenerator.getRequestStatus(123456);
     }
-
 }

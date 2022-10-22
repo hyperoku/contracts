@@ -14,7 +14,6 @@ error SOLUTION_IS_WRONG();
 error GAME_ALREADY_SOLVED();
 
 contract RoundsManager is ConfirmedOwner {
-
     RandomSudokuGenerator public immutable random_sudoku_generator;
 
     struct Game {
@@ -36,9 +35,9 @@ contract RoundsManager is ConfirmedOwner {
 
     mapping(uint32 => Round) private rounds;
     mapping(uint64 => Game) private games;
-
     mapping(string => uint8) public difficulty_values;
     mapping(string => uint32) public last_active_round_ids; // DIFFICULTY -> ROUND ID
+
     string[] public difficulty_names = ["EASY", "MEDIUM", "HARD"];
     uint32 public total_rounds;
     uint64 public total_games;
@@ -58,10 +57,14 @@ contract RoundsManager is ConfirmedOwner {
     event gameCreated(uint64 indexed game_id);
     event gameSolved(uint64 indexed game_id);
 
-    constructor(address _random_sudoku_generator) ConfirmedOwner(msg.sender) {
-        random_sudoku_generator = RandomSudokuGenerator(_random_sudoku_generator);
-        (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = 
-            random_sudoku_generator.getDifficultyRange();
+    constructor(address _random_sudoku_generator) 
+        ConfirmedOwner(msg.sender) 
+    {
+        random_sudoku_generator = RandomSudokuGenerator(
+            _random_sudoku_generator
+        );
+        (MIN_DIFFICULTY_VALUE, MAX_DIFFICULTY_VALUE) = random_sudoku_generator
+            .getDifficultyRange();
         difficulty_values["EASY"] = 37;
         difficulty_values["MEDIUM"] = 48;
         difficulty_values["HARD"] = 53;
@@ -143,8 +146,12 @@ contract RoundsManager is ConfirmedOwner {
         if (bytes(_player_solution).length != 81) {
             revert SOLUTION_IS_WRONG();
         }
-        bytes32 player_solution_hash = keccak256(abi.encodePacked(_player_solution));
-        bytes32 real_solution = random_sudoku_generator.getRequestStatus(game.request_id).solution;
+        bytes32 player_solution_hash = keccak256(
+            abi.encodePacked(_player_solution)
+        );
+        bytes32 real_solution = random_sudoku_generator
+            .getRequestStatus(game.request_id)
+            .solution;
         if (player_solution_hash == real_solution) {
             games[_game_id].end_blockNumber = block.number;
         } else {
@@ -181,10 +188,7 @@ contract RoundsManager is ConfirmedOwner {
         returns (bool)
     {
         if (bytes(_a).length != bytes(_b).length) return false;
-        return (
-            keccak256(abi.encodePacked((_a))) ==
-            keccak256(abi.encodePacked((_b)))
-        );
+        return (keccak256(abi.encodePacked((_a))) == keccak256(abi.encodePacked((_b))));
     }
 
     function getLastActiveRound(string calldata _difficulty)
