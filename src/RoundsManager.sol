@@ -14,7 +14,7 @@ error SOLUTION_IS_WRONG();
 error GAME_ALREADY_SOLVED();
 
 contract RoundsManager is ConfirmedOwner {
-    RandomSudokuGenerator public immutable random_sudoku_generator;
+    RandomSudokuGenerator public random_sudoku_generator;
 
     struct Game {
         uint256 request_id;
@@ -176,6 +176,15 @@ contract RoundsManager is ConfirmedOwner {
         }
         difficulty_names.push(_name);
         difficulty_values[_name] = _value;
+    }
+
+    function changeRandomSudokuGenerator(address _new_random_sudoku_generator)
+        external
+        onlyOwner
+    {
+        random_sudoku_generator = RandomSudokuGenerator(
+            _new_random_sudoku_generator
+        );
     }
 
     function getDifficultyNames() external view returns (string[] memory) {

@@ -142,7 +142,7 @@ contract RoundsManagerTest is Test {
         vm.expectRevert(SOLUTION_IS_WRONG.selector); // solution wrong
         string memory solution = "123125698629487315185693274278346951931758462456219783514962837762831549893574126";
         roundsManager.solveGame(game_id, solution);
-        solution = "347125698629487315185693274278346951931758462456219783514962837762831549893574126";
+        solution = "689214357412357896735689124163495782257863941948172563871546239524931678396728415";
         roundsManager.solveGame(game_id, solution); // solution is correct
         vm.expectRevert(GAME_ALREADY_SOLVED.selector);
         roundsManager.solveGame(game_id, solution);
@@ -197,6 +197,23 @@ contract RoundsManagerTest is Test {
         assertTrue(
             roundsManager.getLastActiveRound(difficulty).id == round_id,
             "getLastActiveRound should be the same as round_id"
+        );
+    }
+
+    function testChangeRandomSudokuGenerator() public {
+        RandomSudokuGenerator new_random_sudoku_generator = new RandomSudokuGenerator(
+            linkAddress,
+            vrfWrapperAddress,
+            address(seedsManager)
+        );
+        roundsManager.changeRandomSudokuGenerator(
+            address(new_random_sudoku_generator)
+        );
+        assertTrue(
+            address(roundsManager.random_sudoku_generator()) == address(
+                new_random_sudoku_generator
+            ),
+            "random_sudoku_generator should be the new one"
         );
     }
 }

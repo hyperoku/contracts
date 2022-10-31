@@ -78,10 +78,7 @@ contract RandomSudokuGenerator is
     function fulfillRandomWords(
         uint256 _requestId,
         uint256[] memory _randomWords
-    ) 
-        internal 
-        override 
-    {
+    ) internal override {
         if (s_requests[_requestId].paid == 0) {
             revert REQUEST_NOT_FOUND();
         }
@@ -117,5 +114,9 @@ contract RandomSudokuGenerator is
         if (!link.transfer(msg.sender, link.balanceOf(address(this)))) {
             revert UNABLE_TO_TRANSFER();
         }
+    }
+
+    function changeSeedsManager(address _seedsManager) external onlyOwner {
+        seedsManager = SeedsManager(_seedsManager);
     }
 }

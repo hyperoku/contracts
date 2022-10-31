@@ -91,4 +91,13 @@ contract RandomSudokuGeneratorTest is Test {
         vm.expectRevert(REQUEST_NOT_FOUND.selector);
         randomSudokuGenerator.getRequestStatus(123456);
     }
+
+    function testChangeSeedsManager() public {
+        SeedsManager newSeedsManager = new SeedsManager();
+        randomSudokuGenerator.changeSeedsManager(address(newSeedsManager));
+        assertTrue(
+            address(randomSudokuGenerator.seedsManager()) == address(newSeedsManager),
+            "seedsManager should be changed"
+        );
+    }
 }
