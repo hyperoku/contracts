@@ -21,16 +21,16 @@ contract RoundsManager is ConfirmedOwner {
         uint64 id;
         uint32 round_id;
         address player;
-        uint256 start_blockNumber;
-        uint256 end_blockNumber;
+        uint256 start_blockTimestamp;
+        uint256 end_blockTimestamp;
     }
 
     struct Round {
         uint32 id;
         string difficulty;
         uint64[] game_ids;
-        uint256 start_blockNumber;
-        uint256 end_blockNumber;
+        uint256 start_blockTimestamp;
+        uint256 end_blockTimestamp;
     }
 
     mapping(uint32 => Round) private rounds;
@@ -41,8 +41,8 @@ contract RoundsManager is ConfirmedOwner {
     string[] public difficulty_names = ["EASY", "MEDIUM", "HARD"];
     uint32 public total_rounds;
     uint64 public total_games;
-    uint32 public round_duration_in_blocks = 4320; // in Mumbai testnet, 1 block ~= 5 seconds -> 4320*5=21600s=6h
-    uint8 public min_game_duration_in_blocks = 12; // 12*5=60s=1min
+    uint32 public round_duration = 21600; // 6h
+    uint8 public min_game_duration = 60; // 1min
 
     uint8 public immutable MIN_DIFFICULTY_VALUE;
     uint8 public immutable MAX_DIFFICULTY_VALUE;
@@ -83,8 +83,8 @@ contract RoundsManager is ConfirmedOwner {
                 round_id,
                 _difficulty,
                 round_games,
-                block.number,
-                block.number + round_duration_in_blocks
+                block.timestamp,
+                block.timestamp + round_duration
             );
             rounds[round_id] = round;
             last_active_round_ids[_difficulty] = round_id;
@@ -102,15 +102,15 @@ contract RoundsManager is ConfirmedOwner {
             uint32 round_id = last_active_round_ids[_difficulty];
             Round memory last_active_round = rounds[round_id];
             if (
-                last_active_round.end_blockNumber < block.number ||
+                last_active_round.end_blockTimestamp < block.timestamp ||
                 !(stringsEqual(last_active_round.difficulty, _difficulty))
             ) {
                 round_id = createRound(_difficulty);
             } else {
                 if (
                     rounds[last_active_round_ids[_difficulty]]
-                        .end_blockNumber <=
-                    block.number + min_game_duration_in_blocks
+                        .end_blockTimestamp <=
+                    block.timestamp + min_game_duration
                 ) revert ROUND_ENDS_SOON();
             }
             uint256 request_id = random_sudoku_generator.requestRandomSudoku(
@@ -123,7 +123,7 @@ contract RoundsManager is ConfirmedOwner {
                 game_id,
                 round_id,
                 msg.sender,
-                block.number,
+                block.timestamp,
                 0
             );
             games[game_id] = game;
@@ -140,7 +140,7 @@ contract RoundsManager is ConfirmedOwner {
         if (game.player != msg.sender) {
             revert PLAYER_IS_NOT_THE_OWNER();
         }
-        if (game.end_blockNumber != 0) {
+        if (game.end_blockTimestamp != 0) {
             revert GAME_ALREADY_SOLVED();
         }
         if (bytes(_player_solution).length != 81) {
@@ -153,7 +153,7 @@ contract RoundsManager is ConfirmedOwner {
             .getRequestStatus(game.request_id)
             .solution;
         if (player_solution_hash == real_solution) {
-            games[_game_id].end_blockNumber = block.number;
+            games[_game_id].end_blockTimestamp = block.timestamp;
         } else {
             revert SOLUTION_IS_WRONG();
         }

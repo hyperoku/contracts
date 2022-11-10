@@ -116,9 +116,9 @@ contract RoundsManagerTest is Test {
     }
 
     function testCreateGameFailsIfRoundEndsSoon() public {
-        uint32 round_duration_in_blocks = roundsManager.round_duration_in_blocks();
+        uint32 round_duration = roundsManager.round_duration();
         roundsManager.createGame("MEDIUM");
-        vm.roll(block.number + round_duration_in_blocks - 2);
+        vm.warp(block.timestamp + round_duration - 2);
         vm.expectRevert(ROUND_ENDS_SOON.selector);
         roundsManager.createGame("MEDIUM");
     }
